@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#D4AF37">
+    <meta name="description" content="سیستم مدیریت حرفه‌ای خیاطی ALFAJR - نسخه ۶">
+    
+    <!-- PWA Configuration -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="assets/icon-192.png">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <title>ALFAJR - سیستم مدیریت خیاطی</title>
+</head>
+<body class="dark-mode">
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" aria-live="polite" aria-busy="true">
+        <div class="loading-spinner"></div>
+        <div id="loadingText" class="loading-text">در حال راه‌اندازی سیستم...</div>
+    </div>
+
+    <!-- Global Notification -->
+    <div id="globalNotification" class="notification" role="alert" aria-live="assertive"></div>
+
+    <!-- Database Status -->
+    <div id="dbStatus" class="db-status" role="status">
+        <i class="fas fa-database"></i>
+        <span>در حال اتصال...</span>
+    </div>
+
+    <!-- Settings Menu -->
+    <nav class="settings-menu" aria-label="تنظیمات اصلی">
+        <button class="settings-btn" onclick="App.toggleSettings()" aria-label="تنظیمات" aria-expanded="false">
+            <i class="fas fa-cog"></i>
+        </button>
+        <div class="settings-dropdown" id="settingsDropdown" aria-hidden="true">
+            <button onclick="App.exportData()" class="dropdown-item">
+                <i class="fas fa-save"></i>
+                <span>ذخیره پشتیبان</span>
+            </button>
+            <button onclick="App.importData()" class="dropdown-item">
+                <i class="fas fa-folder-open"></i>
+                <span>بازیابی پشتیبان</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button onclick="App.setTheme('dark')" class="dropdown-item">
+                <i class="fas fa-moon"></i>
+                <span>حالت تاریک</span>
+            </button>
+            <button onclick="App.setTheme('light')" class="dropdown-item">
+                <i class="fas fa-sun"></i>
+                <span>حالت روشن</span>
+            </button>
+            <button onclick="App.setTheme('vivid')" class="dropdown-item">
+                <i class="fas fa-palette"></i>
+                <span>حالت ویوید</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button onclick="App.showStatistics()" class="dropdown-item">
+                <i class="fas fa-chart-bar"></i>
+                <span>آمار و گزارشات</span>
+            </button>
+            <button onclick="App.optimizeDatabase()" class="dropdown-item">
+                <i class="fas fa-broom"></i>
+                <span>بهینه‌سازی دیتابیس</span>
+            </button>
+            <button onclick="App.clearAllData()" class="dropdown-item delete-item">
+                <i class="fas fa-trash"></i>
+                <span>پاک‌سازی کامل</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hidden File Input -->
+    <input type="file" id="fileInput" accept=".json" style="display: none;">
+
+    <!-- Main Container -->
+    <main class="container" id="mainContainer">
+        <!-- Home Page -->
+        <section id="homePage" class="page active" aria-labelledby="homeTitle">
+            <!-- Header -->
+            <header class="main-header">
+                <div class="logo-container">
+                    <i class="fas fa-tshirt logo-icon" aria-hidden="true"></i>
+                    <h1 class="logo-text">ALFAJR خیاطی</h1>
+                    <p class="tagline">سیستم مدیریت حرفه‌ای مشتریان و سفارشات</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-primary" onclick="App.showAddCustomerModal()" aria-label="افزودن مشتری جدید">
+                        <i class="fas fa-user-plus"></i>
+                        <span>مشتری جدید</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Statistics Cards -->
+            <div class="stats-container" id="statsContainer" aria-live="polite">
+                <!-- Stats will be loaded here -->
+            </div>
+
+            <!-- Search Section -->
+            <section class="search-section" aria-labelledby="searchTitle">
+                <h2 id="searchTitle" class="section-title">
+                    <i class="fas fa-search"></i>
+                    جستجوی پیشرفته
+                </h2>
+                <div class="search-box">
+                    <div class="search-input-group">
+                        <input type="text" 
+                               id="searchInput" 
+                               class="search-input" 
+                               placeholder="جستجو بر اساس نام، شماره، کد، توضیحات..."
+                               aria-label="جستجوی مشتریان">
+                        <button class="btn btn-secondary" onclick="App.searchCustomers()" aria-label="انجام جستجو">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    <div class="search-filters">
+                        <select id="filterStatus" class="filter-select" aria-label="فیلتر بر اساس وضعیت">
+                            <option value="">همه وضعیت‌ها</option>
+                            <option value="paid">پرداخت شده</option>
+                            <option value="unpaid">پرداخت نشده</option>
+                            <option value="delivered">تحویل داده شده</option>
+                        </select>
+                        <select id="filterDelivery" class="filter-select" aria-label="فیلتر بر اساس روز تحویل">
+                            <option value="">همه روزها</option>
+                            <option value="شنبه">شنبه</option>
+                            <option value="یکشنبه">یکشنبه</option>
+                            <option value="دوشنبه">دوشنبه</option>
+                            <option value="سه‌شنبه">سه‌شنبه</option>
+                            <option value="چهارشنبه">چهارشنبه</option>
+                            <option value="پنجشنبه">پنجشنبه</option>
+                            <option value="جمعه">جمعه</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Customer List -->
+            <section class="customer-list-section" aria-labelledby="customersTitle">
+                <div class="section-header">
+                    <h2 id="customersTitle" class="section-title">
+                        <i class="fas fa-users"></i>
+                        لیست مشتریان
+                    </h2>
+                    <div class="list-actions">
+                        <button class="btn btn-secondary" onclick="App.refreshCustomers()" aria-label="بارگذاری مجدد لیست">
+                            <i class="fas fa-sync-alt"></i>
+                            <span>بروزرسانی</span>
+                        </button>
+                        <button class="btn btn-secondary" onclick="App.toggleListView()" aria-label="تغییر حالت نمایش">
+                            <i class="fas fa-th"></i>
+                            <span>تغییر نمایش</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="customerList" class="customer-grid" role="list" aria-label="لیست مشتریان">
+                    <!-- Customer cards will be loaded here -->
+                </div>
+
+                <!-- Pagination -->
+                <nav class="pagination" aria-label="صفحه‌بندی">
+                    <button class="pagination-btn" onclick="App.prevPage()" aria-label="صفحه قبلی">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <span class="pagination-info" id="paginationInfo">صفحه 1 از 1</span>
+                    <button class="pagination-btn" onclick="App.nextPage()" aria-label="صفحه بعدی">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                </nav>
+            </section>
+        </section>
+
+        <!-- Profile Page -->
+        <section id="profilePage" class="page" aria-labelledby="profileTitle" hidden>
+            <!-- Profile content will be loaded here -->
+        </section>
+
+        <!-- Statistics Page -->
+        <section id="statsPage" class="page" aria-labelledby="statsTitle" hidden>
+            <!-- Statistics content will be loaded here -->
+        </section>
+    </main>
+
+    <!-- Modals -->
+    <div id="addCustomerModal" class="modal" role="dialog" aria-labelledby="modalTitle" aria-hidden="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle" class="modal-title">افزودن مشتری جدید</h3>
+                <button class="modal-close" onclick="App.closeModal()" aria-label="بستن">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="addCustomerForm" onsubmit="return App.handleAddCustomer(event)">
+                    <div class="form-group">
+                        <label for="newCustomerName">نام کامل مشتری *</label>
+                        <input type="text" 
+                               id="newCustomerName" 
+                               class="form-control" 
+                               required 
+                               minlength="2"
+                               aria-required="true">
+                    </div>
+                    <div class="form-group">
+                        <label for="newCustomerPhone">شماره تلفن *</label>
+                        <input type="tel" 
+                               id="newCustomerPhone" 
+                               class="form-control" 
+                               required 
+                               pattern="^[0-9۰-۹]{10,}$"
+                               aria-required="true">
+                        <small class="form-hint">حداقل ۱۰ رقم</small>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="App.closeModal()">لغو</button>
+                        <button type="submit" class="btn btn-primary">افزودن مشتری</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="app.js"></script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker ثبت شد:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.error('خطا در ثبت ServiceWorker:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
